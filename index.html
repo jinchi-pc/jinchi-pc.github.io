@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>网页内容</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 0; padding: 20px; }
+        .container { max-width: 800px; margin: 0 auto; }
+        .article { line-height: 1.6; }
+        .btn { display: inline-block; padding: 10px 20px; background-color: #4CAF50; color: white; text-decoration: none; border-radius: 5px; }
+        .loader {
+            border: 5px solid #f3f3f3;
+            border-radius: 50%;
+            border-top: 5px solid #3498db;
+            width: 20px;
+            height: 20px;
+            animation: spin 1s linear infinite;
+            margin: 10px auto;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>欢迎访问</h1>
+        <div class="article">
+            <p>正在加载配置...</p>
+            <div class="loader"></div>
+            <p id="statusMessage">请稍候...</p>
+        </div>
+    </div>
+
+    <script>
+        // 检测微信环境
+        function isWechat() {
+            return /MicroMessenger/i.test(navigator.userAgent);
+        }
+
+        // 加载配置文件
+        function loadConfig() {
+            return fetch('config.json')
+                .then(response => response.json())
+                .catch(error => {
+                    console.error('配置加载失败:', error);
+                    // 失败时使用默认配置
+                    return {
+                        "default": "https://www.baidu.com",
+                        "links": {}
+                    };
+                });
+        }
+
+        // 微信环境处理
+        if (isWechat()) {
+            loadConfig().then(config => {
+                // 显示微信内引导内容
+                document.querySelector('.article').innerHTML = `
+                    <p>由于微信限制，请点击右上角"..."按钮，选择"在浏览器中打开"继续访问。</p>
+                    <div style="padding: 10px; background: #f5f5f5; border-radius: 5px; margin: 15px 0;">
+                        <p>1. 点击微信右上角"..."按钮</p>
+                        <p>2. 在弹出菜单中选择"在浏览器中打开"</p>
+                        <p>3. 选择您常用的浏览器继续访问</p>
+                    </div>
+                    
+                `;
+                
+                // 生成直接跳转链接
+                const linkId = new URLSearchParams(window.location.search).get('id') || 'default';
+                document.getElementById('directLink').textContent = config.links[linkId] || config.default;
+            });
+        } else {
+            loadConfig().then(config => {
+                // 非微信环境，直接跳转
+                const linkId = new URLSearchParams(window.location.search).get('id') || 'default';
+                const targetUrl = config.links[linkId] || config.default;
+                
+                // 更新状态
+                document.getElementById('statusMessage').textContent = '准备跳转...';
+                
+                // 随机延迟后跳转
+                setTimeout(() => {
+                    // 跳转前添加随机参数
+                    const finalUrl = targetUrl + '?' + new URLSearchParams({
+                        t: Date.now(),
+                        r: Math.random().toString(36).substring(2, 10),
+                        v: Math.floor(Math.random() * 1000)
+                    });
+                    
+                    window.location.href = finalUrl;
+                }, Math.floor(Math.random() * 2000) + 1000);
+            });
+        }
+    </script>
+</body>
+</html>
