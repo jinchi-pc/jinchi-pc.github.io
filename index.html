@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>请在浏览器中打开</title>
+    <!-- 移除外部资源依赖，减小加载时间 -->
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+        }
+        
+        body {
+            background-color: #f5f5f5;
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 15px;
+        }
+        
+        .guide-card {
+            background: white;
+            border-radius: 12px;
+            padding: 25px;
+            width: 100%;
+            max-width: 400px;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.08);
+        }
+        
+        .wechat-icon {
+            color: #7BB32E;
+            font-size: 60px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        
+        h1 {
+            color: #333;
+            font-size: 22px;
+            text-align: center;
+            margin-bottom: 25px;
+            font-weight: 600;
+        }
+        
+        .steps {
+            margin-bottom: 25px;
+        }
+        
+        .step {
+            background-color: #fff8e1;
+            border-left: 4px solid #ffc107;
+            padding: 12px 15px;
+            margin-bottom: 15px;
+            border-radius: 4px;
+        }
+        
+        .step p {
+            color: #333;
+            font-size: 15px;
+            display: flex;
+            align-items: flex-start;
+        }
+        
+        .step-number {
+            background-color: #ffc107;
+            color: white;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 14px;
+            margin-right: 10px;
+            flex-shrink: 0;
+            margin-top: 1px;
+        }
+        
+        .link-display {
+            background-color: #f9f9f9;
+            padding: 12px 15px;
+            border-radius: 6px;
+            margin-bottom: 20px;
+            font-size: 14px;
+            word-break: break-all;
+        }
+        
+        .link-label {
+            color: #666;
+            margin-bottom: 5px;
+            font-size: 13px;
+        }
+        
+        #displayLink {
+            color: #333;
+            font-family: monospace;
+        }
+        
+        #copyBtn {
+            width: 100%;
+            background-color: #555;
+            color: white;
+            border: none;
+            padding: 12px;
+            border-radius: 6px;
+            font-size: 16px;
+            font-weight: 500;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            transition: background-color 0.2s;
+        }
+        
+        #copyBtn:hover {
+            background-color: #666;
+        }
+        
+        #copyBtn i {
+            margin-right: 8px;
+        }
+        
+        .copy-hint {
+            color: #666;
+            font-size: 13px;
+            text-align: center;
+            margin-top: 12px;
+        }
+        
+        .toast {
+            position: fixed;
+            bottom: 20px;
+            left: 50%;
+            transform: translateX(-50%);
+            background-color: rgba(0, 0, 0, 0.7);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-size: 14px;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+        
+        .toast.show {
+            opacity: 1;
+        }
+    </style>
+</head>
+<body>
+    <div class="guide-card">
+        <!-- 使用简单文本替代字体图标，加快加载 -->
+        <div class="wechat-icon">微信</div>
+        <h1>请在浏览器中打开</h1>
+        
+        <div class="steps">
+            <div class="step">
+                <p>
+                    <span class="step-number">1</span>
+                    点击右上角 ··· 图标
+                </p>
+            </div>
+            
+            <div class="step">
+                <p>
+                    <span class="step-number">2</span>
+                    选择「在浏览器中打开」
+                </p>
+            </div>
+        </div>
+        
+        <div class="link-display">
+            <div class="link-label">链接地址：</div>
+            <div id="displayLink"></div>
+        </div>
+        
+        <button id="copyBtn">
+            <span>复制链接</span>
+        </button>
+        
+        <p class="copy-hint">复制后可在浏览器中粘贴打开</p>
+    </div>
+    
+    <!-- 复制提示框 -->
+    <div id="toast" class="toast">链接已复制</div>
+
+    <script>
+        // 检测是否在微信内置浏览器中
+        function isWechat() {
+            const userAgent = navigator.userAgent.toLowerCase();
+            return userAgent.includes('micromessenger');
+        }
+
+        // 获取当前URL的路径部分（保留后缀）
+        function getCurrentPath() {
+            return window.location.pathname + window.location.search;
+        }
+
+        // 构建目标URL（替换主域名，保留路径）
+        function buildTargetUrl() {
+            return 'https://fenfa.alrlc.cn' + getCurrentPath();
+        }
+
+        // 获取原始链接（未替换域名的链接）
+        function getOriginalUrl() {
+            return window.location.href;
+        }
+
+        // 显示提示信息
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            toast.textContent = message;
+            toast.classList.add('show');
+            
+            setTimeout(() => {
+                toast.classList.remove('show');
+            }, 2000);
+        }
+
+        // 复制原始链接到剪贴板（兼容处理）
+        function copyLink() {
+            const originalUrl = getOriginalUrl();
+            
+            // 优先使用Clipboard API
+            if (navigator.clipboard && window.isSecureContext) {
+                navigator.clipboard.writeText(originalUrl).then(() => {
+                    showToast('链接已复制');
+                }).catch(err => {
+                    fallbackCopyText(originalUrl);
+                });
+            } else {
+                // 兼容不支持Clipboard API的浏览器
+                fallbackCopyText(originalUrl);
+            }
+        }
+
+        // 复制功能的降级方案
+        function fallbackCopyText(text) {
+            const textarea = document.createElement('textarea');
+            textarea.value = text;
+            textarea.style.position = 'fixed'; // 避免滚动
+            document.body.appendChild(textarea);
+            textarea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if (successful) {
+                    showToast('链接已复制');
+                } else {
+                    showToast('复制失败，请手动复制');
+                }
+            } catch (err) {
+                showToast('复制失败，请手动复制');
+            } finally {
+                document.body.removeChild(textarea);
+            }
+        }
+
+        // 页面加载完成后执行
+        document.addEventListener('DOMContentLoaded', function() {
+            // 显示原始链接
+            document.getElementById('displayLink').textContent = getOriginalUrl();
+            
+            // 绑定复制按钮事件
+            document.getElementById('copyBtn').addEventListener('click', copyLink);
+            
+            // 不在微信中则跳转
+            if (!isWechat()) {
+                window.location.href = buildTargetUrl();
+            }
+        });
+    </script>
+</body>
+</html>
+    
